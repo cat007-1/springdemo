@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+    多表关联查询的 SQL 都写在这里。
+    namespace 必须等于 Mapper 接口的全限定名，MyBatis 靠它把 XML 里的语句绑到接口方法上。
+
+    关于结果映射：这里用 resultType（不是 resultMap），靠「列别名 == VO 属性名」自动填充。
+    两边都写成驼峰，就不依赖 map-underscore-to-camel-case 开关，最不容易出错：
+        u.user_name  AS userName
+        d.dept_name  AS deptName
+    如果列名和属性名对不上，就得改用 resultMap 显式声明。
+-->
+<mapper namespace="org.example.springdemo.mapper.SysUserMapper">
+
+    <!-- 公共查询片段：用户表关联部门表 -->
+    <sql id="userDeptColumns">
+        SELECT u.id          AS id,
+               u.user_name   AS userName,
+               u.phone       AS phone,
+               u.age         AS age,
+               u.dept_id     AS deptId,
+               d.dept_name   AS deptName,
+               d.city        AS city
+        FROM sys_user u
+                 INNER JOIN sys_dept d ON d.id = u.dept_id
+    </sql>
+
+    <!--
+        多表查询（不分页）
+        对应 SysUserMapper.selectUserDeptList()
+        INNER JOIN 的含义：dept_id 在部门表里找不到对应记录的用户不会出现在结果里。
+        如果要保留这类用户，换成 LEFT JOIN，此时 d.dept_name 会是 null。
+    -->
+    <select id="selectUserDeptList" resultType="org.example.springdemo.vo.UserDeptVO">
+        <include refid="userDeptColumns"/>
+        ORDER BY u.id
+    </select>
+
+    <!--
+        多表查询 + 动态条件
+        对应 SysUserMapper.selectUserDeptByDeptId(Long)
+        <if test="deptId != null"> 是 MyBatis 的动态 SQL：条件成立才把这段拼进 SQL。
+        注意 test 里写的是 Java 属性名（deptId），不是数据库列名。
+        这里没有用 #{} 之外的拼接，天然防 SQL 注入。
+    -->
+    <select id="selectUserDeptByDeptId" resultType="org.example.springdemo.vo.UserDeptVO">
+        <include refid="userDeptColumns"/>
+        <where>
+            <if test="deptId != null">
+                u.dept_id = #{deptId}
+            </if>
+        </where>
+        ORDER BY u.id
+    </select>
+
+    <!--
+        多表查询 + 分页
+        对应 SysUserMapper.selectUserDeptPage(IPage, Long)
+
+        这里【千万不要】自己写 LIMIT，也不要写 ORDER BY 之外的收尾：
+        分页拦截器会读取第一个参数 IPage，自动追加 LIMIT ? OFFSET ?，
+        并另外生成一条 count SQL 去填 total。
+        自己写了 LIMIT 会和插件拼出来的冲突，导致页数错乱。
+    -->
+    <select id="selectUserDeptPage" resultType="org.example.springdemo.vo.UserDeptVO">
+        <include refid="userDeptColumns"/>
+        <where>
+            <if test="deptId != null">
+                u.dept_id = #{deptId}
+            </if>
+        </where>
+        ORDER BY u.id
+    </select>
+
+</mapper>

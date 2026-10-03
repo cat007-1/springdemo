@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>今日三件事</title>
+
+  <style>
+    /* ===================================================================
+       全部样式都写在这一个文件里，不依赖任何外部库、不联网也能打开。
+       想换配色，只改下面 :root 里这几个变量就够了。
+       =================================================================== */
+    :root {
+      --bg:     #f5f6f8;   /* 页面背景 */
+      --card:   #ffffff;   /* 卡片背景 */
+      --text:   #1f2328;   /* 主文字 */
+      --muted:  #8b949e;   /* 次要文字 */
+      --line:   #e5e7eb;   /* 分隔线 */
+      --accent: #2563eb;   /* 强调色（勾选框、按钮） */
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 460px;
+      padding: 32px 28px;
+      background: var(--card);
+      border-radius: 16px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, .06), 0 12px 32px rgba(0, 0, 0, .06);
+    }
+
+    h1 { margin: 0 0 4px; font-size: 22px; }
+    .date { margin: 0 0 20px; font-size: 13px; color: var(--muted); }
+
+    /* 每一条：勾选框 + 输入框，靠 flex 横向排开 */
+    .item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .item:last-of-type { border-bottom: none; }
+
+    .item input[type="checkbox"] {
+      flex: none;
+      width: 20px;
+      height: 20px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .item input[type="text"] {
+      flex: 1;
+      padding: 4px 0;
+      border: none;
+      outline: none;
+      background: transparent;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 16px;
+    }
+    .item input[type="text"]::placeholder { color: #c4c9d0; }
+
+    /* 勾选之后：文字变灰 + 划掉 */
+    .item.done input[type="text"] {
+      color: var(--muted);
+      text-decoration: line-through;
+    }
+
+    .progress {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 22px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+      font-size: 13px;
+      color: var(--muted);
+    }
+  </style>
+</head>
+
+<body>
+  <main class="card">
+    <h1>今日三件事</h1>
+    <p class="date" id="date"></p>
+
+    <!-- 三个条目直接写死在 HTML 里，不玩抽象的循环，
+         这样你一眼能看出每一行对应页面上的哪个东西 -->
+    <div class="item">
+      <input type="checkbox" id="done0">
+      <input type="text" id="text0" placeholder="最重要的一件事">
+    </div>
+    <div class="item">
+      <input type="checkbox" id="done1">
+      <input type="text" id="text1" placeholder="第二件事">
+    </div>
+    <div class="item">
+      <input type="checkbox" id="done2">
+      <input type="text" id="text2" placeholder="第三件事">
+    </div>
+
+    <div class="progress">
+      <span id="progress">已完成 0 / 3</span>
+      <span>数据只存在你本机浏览器里</span>
+    </div>
+  </main>
+
+  <script>
+    // ===================================================================
+    // 逻辑部分。整个页面就靠下面这几十行跑起来，没有任何框架。
+    // ===================================================================
+
+    const STORE_KEY = 'three-things';   // 存在浏览器里的键名（localStorage）
+
+    // 拿到三个输入框和三个勾选框，下标 0/1/2 一一对应
+    const texts = [0, 1, 2].map(i => document.getElementById('text' + i));
+    const boxes = [0, 1, 2].map(i => document.getElementById('done' + i));
+
+    // 返回 "2026-02-14" 这种格式的今天日期，用来判断有没有跨天
+    function today() {
+      const d = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+    }
+
+    // 读取上次保存的内容；如果存的是别的日期，就当成新的一天，从空白开始
+    function load() {
+      const blank = { date: today(), texts: ['', '', ''], done: [false, false, false] };
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORE_KEY));
+        if (!saved || saved.date !== today()) return blank;
+        return saved;
+      } catch (e) {
+        return blank;   // 存的东西坏了就当没有，不要让页面白屏
+      }
+    }
+
+    let state = load();   // 页面当前的全部数据，就这一个对象
+
+    // 把 state 画到页面上
+    function render() {
+      texts.forEach((el, i) => {
+        // 正在输入的那个框不要覆盖，否则光标会跳
+        if (document.activeElement !== el) el.value = state.texts[i];
+        boxes[i].checked = state.done[i];
+        el.parentElement.classList.toggle('done', state.done[i]);
+      });
+
+      const finished = state.done.filter(Boolean).length;
+      document.getElementById('progress').textContent = '已完成 ' + finished + ' / 3';
+      document.getElementById('date').textContent = state.date;
+    }
+
+    // 把 state 存回浏览器
+    function save() {
+      localStorage.setItem(STORE_KEY, JSON.stringify(state));
+    }
+
+    // --- 绑定事件 ---
+
+    texts.forEach((el, i) => {
+      el.addEventListener('input', () => {
+        state.texts[i] = el.value;
+        save();
+      });
+    });
+
+    boxes.forEach((el, i) => {
+      el.addEventListener('change', () => {
+        state.done[i] = el.checked;
+        save();
+        render();          // 勾选后要重画，才能出现划线效果
+      });
+    });
+
+    // 页面一直开着跨过午夜时，自动换成新的一天
+    setInterval(() => {
+      if (state.date !== today()) {
+        state = load();
+        render();
+      }
+    }, 60 * 1000);
+
+    render();   // 首次进入时画一遍
+  </script>
+</body>
+</html>

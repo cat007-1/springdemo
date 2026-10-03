@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>4.1.1</version>
+        <relativePath/> <!-- lookup parent from repository -->
+    </parent>
+    <groupId>org.example</groupId>
+    <artifactId>Springdemo</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>Springdemo</name>
+    <description>Springdemo</description>
+    <url/>
+    <licenses>
+        <license/>
+    </licenses>
+    <developers>
+        <developer/>
+    </developers>
+    <scm>
+        <connection/>
+        <developerConnection/>
+        <tag/>
+        <url/>
+    </scm>
+    <properties>
+        <java.version>17</java.version>
+        <!--
+            必须显式声明源码是 UTF-8。
+            本机 Java 平台默认编码是 GB2312，不声明的话 javac 会拿 GB2312 去解 UTF-8 源码，
+            注释里的中文只是变成乱码（旧代码没报错），但一旦中文出现在字符串字面量里
+            （比如 @Operation(summary="新增用户")），就会报「非法 Unicode 字符」而编译失败。
+        -->
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webmvc</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webmvc-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <scope>runtime</scope>
+            <optional>true</optional>
+        </dependency>
+
+        <!--
+            Swagger / OpenAPI 文档。
+            说明：Spring Boot 4 必须用 springdoc 3.x（3.x 起进入 Boot 4 版本线），
+            老的 springfox 2.x / springdoc 2.x 只支持 Boot 3，加进来会启动失败。
+            该 starter 已内含 swagger-ui 网页，无需再单独引 swagger-ui 依赖。
+        -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>3.1.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!--
+            MyBatis-Plus。
+            注意 starter 名字：Spring Boot 4 要用 mybatis-plus-spring-boot4-starter，
+            Boot 3 的 mybatis-plus-spring-boot3-starter 在 Boot 4 下不会自动装配。
+        -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-spring-boot4-starter</artifactId>
+            <version>3.5.17</version>
+        </dependency>
+
+        <!--
+            分页插件必需。MyBatis-Plus 3.5.9 起把 JSqlParser 拆成了独立模块，
+            不引这个依赖，PaginationInnerInterceptor 会在运行时报 ClassNotFoundException。
+        -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-jsqlparser</artifactId>
+            <version>3.5.17</version>
+        </dependency>
+
+        <!--
+            H2 内存数据库：为了不依赖本机装 MySQL，学习时免配置。
+            内存库随 JVM 启停，数据不落地，每次重启都从 schema.sql / data.sql 重建。
+            要换成 MySQL：把 h2 换成 mysql-connector-j，再改 application.properties 里的 url 和账号密码。
+        -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!--
+            参数校验：@Valid / @NotBlank / @Size 等注解需要它。
+            （hibernate-validator 其实已被 springdoc 传递带进来了，但依赖传递不该被依赖，
+             自己用到的能力就自己声明，否则哪天 springdoc 换实现，编译就报找不到符号。）
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
